@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 
-# 029 Puncher (Jul-17-2025)
-# By Luca Severini
+# 029 Puncher
+# main.py (8-23-2025)
+# By Luca Severini (lucaseverini@mac.com)
 
-# main.py
-
-from PyQt5.QtWidgets import QApplication, QSplashScreen
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import QTimer
-from main_window import MainWindow
 import os
 import sys
 import signal
-import traceback, logging
-from PyQt5.QtWidgets import QMessageBox
+import traceback
+import logging
 from pathlib import Path
+from PyQt5.QtWidgets import QApplication, QSplashScreen, QMessageBox
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QTimer
+from main_window import MainWindow
 
 # PRINT_ATTRIBUTES
 RED = "\033[31m"
@@ -56,7 +55,7 @@ def main():
             QMessageBox.critical(None, "Startup Error", err)
             QApplication.quit()
         
-    QTimer.singleShot(4000, show_main_window)
+    QTimer.singleShot(1000, show_main_window)
     app.processEvents()
    
     # Dummy timer to keep the Qt event loop alive and processing events

@@ -1,0 +1,5 @@
+Fix multithread issue.
+Implement log in app window.
+Implement cleaning the LOGS folder.
+Implement git version with date in About dialog.
+Add a picture of the 029 Punch in the About dialog.
