@@ -1,0 +1,9 @@
+* text=auto eol=lf
+# optional binaries
+*.png -text
+*.jpg -text
+*.gif -text
+*.pdf -text
+*.zip -text
+# keep CRLF only where required
+*.bat text eol=crlf
