@@ -1,5 +1,5 @@
-Fix multithread issue.
-Implement log in app window.
-Implement cleaning the LOGS folder.
-Implement git version with date in About dialog.
-Add a picture of the 029 Punch in the About dialog.
+Doesn't work on macOS (only the first readline).
+When there is an empty line, should punch an empty card?
+Option to wait and continue instead of stopping when Punch Not Registered Error
+Option to remember the status of the last operation and continue from there
+Is it really necessary to waste the first card?
