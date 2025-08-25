@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         
     def set_window_title(self):
         version = get_git_version()
-        version_str = f" - version 0.{version}" if version else ""
+        version_str = f" - Version {version}" if version else ""
         self.setWindowTitle(f"029 Puncher{version_str}")
 
     def set_central_widget(self, widget):
@@ -97,7 +97,7 @@ class MainWindow(QMainWindow):
             "This program punches card deck files (.cd) and text files (.txt) with the IBM 029 Card Punch through the connection with relays in an Arduino® controlled board."
         )   
         
-        image_path = os.path.join(os.path.dirname(__file__), "CHM-logo-2.png")
+        image_path = os.path.join(os.path.dirname(__file__), "Images/CHM-logo-2.png")
         pixmap = QPixmap(image_path)
         scaled_pixmap = pixmap.scaled(80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 

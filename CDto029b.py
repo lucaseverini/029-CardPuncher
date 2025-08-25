@@ -135,8 +135,9 @@ def punch_file_test(file_path, log = None):
 def punch_file(file_name):
     # USB port D: home  line37   f; CHM
     # Configure the serial port (adjust as needed)
-    usb_port = 'COM4'   # at CHM  9600 baud
+    usb_port = 'COM4'   # at CHM
     #usb_port = 'COM13' # at home
+    #usb_port = "/dev/tty.usbmodem14201" # for macOS
     baud_rate = 9600
     timeout = 60 # seconds
 

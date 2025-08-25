@@ -1,20 +1,49 @@
 #!/usr/bin/env python3
 
-# Final project (May-23-2025)
-# Class: DATA 201-21
-# Instructor: Ronald Mak ron.mak@sjsu.edu
-# Students: Schema Squad
-
-# db/git.py
+# 029 Puncher
+# git.py (8-24-2025)
+# By Luca Severini (lucaseverini@mac.com)
 
 import subprocess
 
-def get_git_version():
+def get_git_tag():
     version = None
     try:
-        version = subprocess.check_output(["git", "rev-list", "--all", "--count"], stderr=subprocess.DEVNULL)
-        version = version.decode().strip()
+        git_output = subprocess.check_output(["git", "describe", "--tags", "--always"], stderr = subprocess.DEVNULL)
+        tag = git_output.strip().decode()
+        
     except Exception:
-        version = ""
-    # print(f"Git version: {version}")
-    return version
+        tag = "[error getting git tag]"
+        
+    # print(f"Git tag: {tag}")
+    return tag
+
+def get_git_count():
+    count = None
+    try:
+        git_output = subprocess.check_output(["git", "rev-list", "--all", "--count"], stderr = subprocess.DEVNULL)
+        count = git_output.strip().decode()
+        
+    except Exception:
+        count = "[error getting git count]"
+        
+    # print(f"Git count: {count}")
+    return count
+
+def get_git_date():
+    date = None
+    try:
+        git_output = subprocess.check_output(["git", "log", "-1", "--format=%cd", "--date=format:%Y-%m-%d %H:%M"], stderr = subprocess.DEVNULL)
+        date = git_output.strip().decode()
+
+    except subprocess.CalledProcessError:
+        date = "[error getting git date]"
+
+    # print(f"Git date: {date}")
+    return date
+    
+def get_git_version():
+    count = get_git_count()
+    date = get_git_date()
+    return f"1.{count} ({date})"
+    
