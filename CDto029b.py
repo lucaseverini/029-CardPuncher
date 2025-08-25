@@ -13,39 +13,6 @@ import threading
 from datetime import datetime
 
 punching_stopped = threading.Event()
-
-# Just for testing
-# ------------------------------------------------------------------------------
-def punch_file_test_2(file_path, log = None):
-    file_name = os.path.basename(file_path)
-    
-    def send_log(msg: str):
-        print(msg)
-        if log:
-            try:
-                log(msg)
-
-            except Exception:
-                pass
-
-    send_log(f"File to punch: {file_name}\n")
-    
-    punching_stopped.clear()
-  
-    for idx in range(20):
- 
-        # Check the stop button has been pressed 
-        if punching_stopped.is_set():
-            return f"Aborted punching file {file_name}"
-        
-        # Simulate doing some work...
-        punching_stopped.wait(0.1)
-        
-        send_log(f"[{idx + 1}/100] punching {file_name} ...")
-        
-    send_log(f"Punch completed: {file_name}\n")
-    
-    return f"Done punching file {file_name}"
     
 # Just for testing
 # ------------------------------------------------------------------------------
@@ -130,7 +97,7 @@ def punch_file_test(file_path, log = None):
     
     return f"Done punching file {file_name}"
  
-# Send the file to punch to the Arduino line by line
+# Send the file to the Arduino line by line
 # ------------------------------------------------------------------------------   
 def punch_file(file_name):
     # USB port D: home  line37   f; CHM
