@@ -1,5 +1,1 @@
-Doesn't work on macOS (only the first readline).
-When there is an empty line, should punch an empty card?
-Option to wait and continue instead of stopping when Punch Not Registered Error
-Option to remember the status of the last operation and continue from there
-Is it really necessary to waste the first card?
+Doesn't work on macOS (only the first readline).When there is an empty line, should punch an empty card?Option to wait and continue instead of stopping when Punch Not Registered ErrorOption to remember the status of the last operation and continue from thereIs it really necessary to waste the first card?
