@@ -40,9 +40,12 @@ class MainWindow(QMainWindow):
 
         # Utility menu
         self.utils_menu = self.menu.addMenu("Utility")
-        self.action_clear_logs = QAction("Clear Logs…", self)
+        self.action_clear_logs = QAction("Delete Log files…", self)
         self.action_clear_logs.triggered.connect(self.clear_logs)
         self.utils_menu.addAction(self.action_clear_logs)
+        self.action_delete_log = QAction("Delete Log Text", self)
+        self.action_delete_log.triggered.connect(self.delete_log)
+        self.utils_menu.addAction(self.action_delete_log)
                         
         self.show_punch_files()
         # self.show_about_dialog()
@@ -107,6 +110,9 @@ class MainWindow(QMainWindow):
         msg_box.setStandardButtons(QMessageBox.Ok)
         msg_box.setIconPixmap(scaled_pixmap)
         msg_box.exec_()
+        
+    def delete_log(self):
+        self.main_view.arduino_messages.clear()
  
     def clear_logs(self):
         log_dir = "LOGS"

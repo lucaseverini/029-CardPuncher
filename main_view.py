@@ -7,11 +7,26 @@
 import os
 import time
 from PyQt5.QtCore import Qt, QTimer, QObject, QThread, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog, QMenu, QAction
 from PyQt5.QtWidgets import QHBoxLayout, QMessageBox, QMainWindow, QTextEdit, QApplication
 from CDto029b import punch_file, punch_file_test, punching_stopped
 from worker import PunchWorker
 
+class LogTextEdit(QTextEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._show_menu)
+
+    def _show_menu(self, pos):
+        menu = self.createStandardContextMenu()
+        menu.addSeparator()
+        clear_action = QAction("Clear All", self)
+        clear_action.triggered.connect(self.clear)
+        menu.addAction(clear_action)
+        menu.exec_(self.mapToGlobal(pos))
+        
 class MainView(QWidget):
     def __init__(self):
         super().__init__()
@@ -57,9 +72,12 @@ class MainView(QWidget):
         self.layout.addWidget(self.stop_button)
 
         self.arduino_label = QLabel("Arduino Messages:")
-        self.arduino_messages = QTextEdit()
+        self.arduino_messages = LogTextEdit()
+        font = QFont("Monospace")
+        font.setStyleHint(QFont.TypeWriter)   # Pick a fixed-pitch font
+        self.arduino_messages.setFont(font)
         self.arduino_messages.setReadOnly(True)
-        
+       
         self.layout.addWidget(self.arduino_label, 0)
         self.layout.addWidget(self.arduino_messages, 1)
 
@@ -84,7 +102,7 @@ class MainView(QWidget):
         try:
             # Create thread + worker
             self.thread = QThread(self)
-            self.worker = PunchWorker(punch_file_test, self.cd_file)
+            self.worker = PunchWorker(punch_file, self.cd_file)
             self.worker.moveToThread(self.thread)
 
             # Start + cleanup

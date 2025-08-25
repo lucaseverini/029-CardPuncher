@@ -16,7 +16,7 @@ from PyQt5.QtCore import Qt, QTimer
 from main_window import MainWindow
 
 
-kSplashTimeout = 4000 # millisecs
+kSplashTimeout = 3000 # millisecs
 
 # PRINT_ATTRIBUTES
 RED = "\033[31m"

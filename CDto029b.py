@@ -48,7 +48,7 @@ def punch_file_test(file_path, log = None):
                 # Send the data + line through the serial port
                 # ser.write(msg)
                 
-                print(f"Message sent:{len(line)-1} data chars to punch:")
+                print(f"Message sent: {len(line)-1} data chars to punch:")
                 print(f"{line}")
                 
                 minutestamp = datetime.now().strftime('%H:%M:%S')
@@ -99,14 +99,16 @@ def punch_file_test(file_path, log = None):
  
 # Send the file to the Arduino line by line
 # ------------------------------------------------------------------------------   
-def punch_file(file_name):
+def punch_file(file_name, log = None):
     # USB port D: home  line37   f; CHM
     # Configure the serial port (adjust as needed)
     usb_port = 'COM4'   # at CHM
-    #usb_port = 'COM13' # at home
-    #usb_port = "/dev/tty.usbmodem14201" # for macOS
+    # usb_port = 'COM13' # at home
+    # usb_port = "/dev/tty.usbserial-A50285BI" # for macOS
     baud_rate = 9600
     timeout = 60 # seconds
+    
+    punching_stopped.clear()
 
     msg = ""
     EOJmsg = ""
@@ -117,9 +119,33 @@ def punch_file(file_name):
 
     log_filename = os.path.join(log_dir, f"app_log_{timestamp}.log")
     logging.basicConfig(filename = log_filename, level = logging.INFO)
-    logging.info("Log with a timestamped filename, each entry prefied with %H:%M:%S minute stamp")
-    # print(f"{timestamp} log file setup {log_filename}") 
+ 
+    def send_log(msg: str):
+        logging.info(msg)
+        if log:
+            try:
+                log(msg)
 
+            except Exception:
+                pass
+ 
+    # d: at home  e: at chm
+    if not file_name:
+        file_name = input("Please enter the name of the file you want to punch: ")
+        if not file_name:
+            print("No file to punch.")
+            sys.exit(0) 
+        
+    print("File to punch:", file_name)
+
+    minutestamp = datetime.now().strftime('%H:%M:%S')
+    send_log(f"{minutestamp} Punching file: {file_name} ")
+            
+    minutestamp = datetime.now().strftime('%H:%M:%S')
+    send_log(f"{minutestamp} Log to file: {os.path.basename(log_filename)}\n")
+    
+    punching_interrupted = False
+ 
     try:
         # Open the serial port to the 029 arudino
         ser = serial.Serial(usb_port, baud_rate)
@@ -127,9 +153,9 @@ def punch_file(file_name):
         
         # send the start command to the 029 arduino and print the response    
         ser.write("start   \n".encode('utf-8'))
-        print(f"{timestamp} Sent: start command")
+        print(f"{timestamp} Sent: Start command")
         minutestamp = datetime.now().strftime('%H:%M:%S') 
-        logging.info(f"{minutestamp} Sent: start command")   
+        send_log(f"{minutestamp} Sent: Start command")   
         msg=""
         
         while True:
@@ -143,49 +169,37 @@ def punch_file(file_name):
                     data = msg.decode('utf-8')             
                     print("Started Arduino program:",data)
                     minutestamp = datetime.now().strftime('%H:%M:%S')
-                    logging.info(f"{minutestamp} Received msg= {data} ")   
+                    send_log(f"{minutestamp} Received: {data} ")   
                     break
                 except UnicodeDecodeError:
                     print("Error decoding data")
                     
             else:
                 print("Timeout: No data received")
-     
-        # d: at home  e: at chm
-        if not file_name:
-            file_name = input("Please enter the name of the file you want to punch: ")
-            if not file_name:
-               print("No file to punch.")
-               sys.exit(0) 
-        
-        minutestamp = datetime.now().strftime('%H:%M:%S')
-        logging.info(f"{minutestamp} punching file {file_name} ")
-        
-        print("File to punch:", file_name)
-        
+             
         line_counter = -1
         try:
             with open(file_name, 'r') as file:
                 line_counter += 1
                 
                 for line in file:
-                    if punching_stopped:
-                       break
+                    if punching_stopped.is_set():
+                        punching_interrupted = True
+                        break
 
                     line_counter += 1
-                    msg = "data"+line
+                    msg = "data" + line
                     msg = msg.encode('utf-8')
                     # Send the data + line through the serial port
                     ser.write(msg)
                     
-                    print(f"Message sent:{len(line)-1} data chars to punch:")
-                    print(f"{line}")
+                    print(f"Message sent: {len(line)-1} data chars to punch:")
+                    print(f"{line.strip()}")
                     minutestamp = datetime.now().strftime('%H:%M:%S')
-                    logging.info(f"{minutestamp} Sent: {msg}")
+                    send_log(f"{minutestamp} Sent: {line.strip()}")
                     
                     while True:
-                        # Read a line from the 029 serial port check if it is the
-                        msg =""
+                        # Read a line from the 029 serial port
                         msg = ser.readline()
                      
                         # Check if any data was received
@@ -193,14 +207,14 @@ def punch_file(file_name):
                             # Decode the received bytes to string (handle potential errors)
                             try:
                                 msg = msg.decode('utf-8')       
-                                print(f"Received message from keypunch:") 
+                                print(f"Received message:") 
                                 print(f"{msg}")
                                 
                                 minutestamp = datetime.now().strftime('%H:%M:%S')
-                                logging.info(f"{minutestamp} Received  msg= {msg}")                  
+                                send_log(f"{minutestamp} Received: {msg}")                  
                                 if "ERROR" in msg:
                                     minutestamp = datetime.now().strftime('%H:%M:%S')
-                                    logging.info(f"{minutestamp} Sent:  msg= {msg}")  
+                                    send_log(f"{minutestamp} Sent: {msg}")  
                                     print("fatal error in keypunch program terminating")                        
                                     sys.exit(0)       
                                 break
@@ -210,7 +224,7 @@ def punch_file(file_name):
                         else:
                             print("Timeout: No punch responce received")
                             minutestamp = datetime.now().strftime('%H:%M:%S')
-                            logging.info(f"{minutestamp} Timeout no response from punch received")
+                            send_log(f"{minutestamp} Timeout no response from punch received")
                             
         except FileNotFoundError:
             print("File not found")
@@ -222,19 +236,19 @@ def punch_file(file_name):
         # if file was not empty
         if line_counter > 0:
             minutestamp = datetime.now().strftime('%H:%M:%S')
-            if punching_stopped:
+            if punching_interrupted:
                 print("File punching interrupted.")
-                logging.info(f"{minutestamp} File punching interrupted.")
+                send_log(f"{minutestamp} File punching interrupted.")
             else:
                 print("File punching complete.") 
-                logging.info(f"{minutestamp} File punching complete.") 
+                send_log(f"{minutestamp} File punching complete.") 
      
             # end of file send eoj to 029
             ser.write("eoj\n".encode('utf-8'))  
             
-            print("Sent eoj.")        
+            print("Sent EOJ.")        
             minutestamp = datetime.now().strftime('%H:%M:%S')
-            logging.info(f"{minutestamp} Sent eoj.") 
+            send_log(f"{minutestamp} Sent EOJ.") 
      
             while True:
                 # Read a line from the serial port check if it is the
@@ -246,9 +260,9 @@ def punch_file(file_name):
                     # Decode the received bytes to string (handle potential errors)
                     try:
                         EOJmsg = EOJmsg.decode('utf-8').strip()            
-                        print(f"Received eoj response:  {EOJmsg}")
+                        print(f"Received EOJ response: {EOJmsg}")
                         minutestamp = datetime.now().strftime('%H:%M:%S')
-                        logging.info(f"{minutestamp} Received eoj response: msg= {EOJmsg}")  
+                        send_log(f"{minutestamp} Received eoj response: {EOJmsg}")  
                         break
                         
                     except UnicodeDecodeError:
@@ -269,12 +283,25 @@ def punch_file(file_name):
         # Ensure the serial port is closed
         # print('Finally is executed!')
         minutestamp = datetime.now().strftime('%H:%M:%S')
-        logging.info(f"{minutestamp} Python Function finally: is  closing ports and exiting")
+        send_log(f"{minutestamp} Closing ports and exiting.")
         
         if 'ser' in locals() and ser.is_open:
             ser.close()
             print("Serial port closed.")
 
+        minutestamp = datetime.now().strftime('%H:%M:%S')
+        send_log(f"{minutestamp} Punch completed.\n")
+  
+        for h in logging.getLogger().handlers[:]:
+                if isinstance(h, logging.FileHandler):
+                    h.close()
+                    logging.getLogger().removeHandler(h)
+    
+    if punching_interrupted:
+        return f"Interrupted punching file:\n{file_name}"
+    else:
+        return f"Done punching file:\n{file_name}"
+    
 if __name__ == "__main__":
     try:
         file = ""
