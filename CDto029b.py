@@ -133,7 +133,7 @@ def punch_file_test(file_path, range = None, punch_all = True, log = None):
         send_log(f"{minutestamp} File punched completely.")
         report += f"File punched completely.\n"
        
-    send_log(f"{minutestamp} Rows punched: {range_str}.\n")
+    send_log(f"{minutestamp} Rows punched: {range_str}\n")
     report += f"Rows punched: {range_str}."
        
     return report, punch_aborted, (start_row, end_row)
@@ -293,49 +293,59 @@ def punch_file(file_path, range = None, punch_all = True, log = None):
             
         # if file was not empty
         if line_counter > 0:
-            minutestamp = datetime.now().strftime('%H:%M:%S')
-            if punching_interrupted:
+            if punch_aborted:
                 print("File punching interrupted.")
-                send_log(f"{minutestamp} File punching interrupted.")
             else:
                 print("File punching complete.") 
-                send_log(f"{minutestamp} File punching complete.") 
-     
+      
             # end of file send eoj to 029
             ser.write("eoj\n".encode('utf-8'))  
             
-            print("Sent EOJ.")        
+            print("Sent EOJ.")
+            
             minutestamp = datetime.now().strftime('%H:%M:%S')
             send_log(f"{minutestamp} Sent EOJ.") 
      
+            # Check EOJ response
             while True:
                 # Read a line from the serial port check if it is the
-                EOJmsg = ""
-                EOJmsg = ser.readline()
+                eojMsg = ser.readline()
 
                 # Check if any data was received
-                if EOJmsg:
+                if eojMsg:
                     # Decode the received bytes to string (handle potential errors)
                     try:
-                        EOJmsg = EOJmsg.decode('utf-8').strip()            
-                        print(f"Received EOJ response: {EOJmsg}")
+                        eojStr = eojMsg.decode('utf-8').strip()
+                        
+                        print(f"Received EOJ response: {eojStr}")
+                        
                         minutestamp = datetime.now().strftime('%H:%M:%S')
-                        send_log(f"{minutestamp} Received eoj response: {EOJmsg}")  
+                        send_log(f"{minutestamp} Received EOJ response: {eojStr}\n")  
                         break
                         
                     except UnicodeDecodeError:
-                        print("Error decoding data")
+                        print("Error decoding EOJ response")
+                        
+                        minutestamp = datetime.now().strftime('%H:%M:%S')
+                        send_log(f"{minutestamp} Error decoding EOJ response.\n")
                 else:
-                    print("Timeout: No data received")   
+                    print("Timeout: No EOJ response received")   
+                        
+                    minutestamp = datetime.now().strftime('%H:%M:%S')
+                    send_log(f"{minutestamp} Timeout: No EOJ response received.\n")
+                    
         elif line_counter == 0:
             print("File is empty")
+            
+            minutestamp = datetime.now().strftime('%H:%M:%S')
+            send_log(f"{minutestamp} File is empty.\n")
      
     except serial.SerialException as e:
         print(f"Error: Could not open serial port: {e}")
     except FileNotFoundError:
         print("Error: Text file not found.")
     except Exception as e:
-         print(f"An unexpected error occurred: {e}")
+        print(f"An unexpected error occurred: {e}")
 
     finally:
         minutestamp = datetime.now().strftime('%H:%M:%S')
@@ -367,7 +377,7 @@ def punch_file(file_path, range = None, punch_all = True, log = None):
         send_log(f"{minutestamp} File punched completely.")
         report += f"File punched completely.\n"
    
-    send_log(f"{minutestamp} Rows punched: {range_str}.\n")
+    send_log(f"{minutestamp} Rows punched: {range_str}\n")
     report += f"Rows punched: {range_str}."
          
     for h in logging.getLogger().handlers[:]:

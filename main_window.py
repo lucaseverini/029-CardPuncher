@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
 
         # Utility menu
         self.utils_menu = self.menu.addMenu("Utility")
-        self.action_clear_logs = QAction("Delete Log files…", self)
+        self.action_clear_logs = QAction("Delete Log Files…", self)
         self.action_clear_logs.triggered.connect(self.clear_logs)
         self.utils_menu.addAction(self.action_clear_logs)
         self.action_delete_log = QAction("Delete Log Text", self)

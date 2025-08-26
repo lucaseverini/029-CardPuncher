@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QHBoxLayout, QMessageBox, QMainWindow, QTextEdit, QA
 from CDto029b import punch_file, punch_file_test, punching_stopped
 from worker import PunchWorker
 
-kPunchMethod = punch_file_test # punch_file / punch_file_test 
+kPunchMethod = punch_file # punch_file / punch_file_test 
 
 class LogTextEdit(QTextEdit):
     def __init__(self, parent=None):
