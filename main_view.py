@@ -6,10 +6,10 @@
 
 import os
 import time
-from PyQt5.QtCore import Qt, QTimer, QObject, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, QTimer, QObject, QThread, pyqtSignal, pyqtSlot, QSize
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog, QMenu, QAction
-from PyQt5.QtWidgets import QHBoxLayout, QMessageBox, QMainWindow, QTextEdit, QApplication
+from PyQt5.QtWidgets import QHBoxLayout, QMessageBox, QMainWindow, QTextEdit, QApplication, QSpinBox
 from CDto029b import punch_file, punch_file_test, punching_stopped
 from worker import PunchWorker
 
@@ -33,7 +33,10 @@ class MainView(QWidget):
         self.setWindowTitle("ETL Control Panel")
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
-
+        self.layout.setSpacing(6)
+        self._range_widgets_added = False
+        self._range_warning_shown = False
+ 
         self.file_label = QLabel("No file selected")
         
         self.select_button = QPushButton("Select File to Punch")
@@ -71,38 +74,131 @@ class MainView(QWidget):
         self.layout.addWidget(self.punch_button)
         self.layout.addWidget(self.stop_button)
 
-        self.arduino_label = QLabel("Arduino Messages:")
+        self.arduino_label = QLabel("Punching operation log:")
         self.arduino_messages = LogTextEdit()
-        font = QFont("Monospace")
+        
+        font = QFont()
         font.setStyleHint(QFont.TypeWriter)   # Pick a fixed-pitch font
+        
         self.arduino_messages.setFont(font)
         self.arduino_messages.setReadOnly(True)
        
         self.layout.addWidget(self.arduino_label, 0)
         self.layout.addWidget(self.arduino_messages, 1)
-
+               
         self.cd_file = None
         
         self.resize(800, 600)
 
     def select_file(self):
+        # File unselected
+        if QApplication.keyboardModifiers() & Qt.AltModifier:
+            self.cd_file = None
+            self.file_label.setText("No file selected")
+            self.punch_button.setText("Punch Selected File")
+            self.punch_button.setEnabled(False)
+            
+            self.layout.removeWidget(self.range_row_widget)
+            self.range_row_widget.setParent(None)
+            
+            self.layout.removeWidget(self.rows_total_label)
+            self.rows_total_label.setParent(None)
+
+            self._range_widgets_added = False
+ 
+            return
+
+        # File selected
         path, _ = QFileDialog.getOpenFileName(self, "Select a Card Deck (.cd) or a Text file (.txt)", "", "Card Deck or Text Files (*.cd *.txt)")
         if path:
             print(f"Selected file: {path}")
             self.cd_file = path
             filename = os.path.basename(path)
-            self.file_label.setText(f"Selected: {filename}")
+            self.file_label.setText(f"Selected file: {filename}")
             self.punch_button.setText(f"Punch {filename}")
             self.punch_button.setEnabled(True)
 
-    def continue_punching(self):
+            # Count rows (cards) in the selected file
+            try:
+                self._rows_total = 0
+                with open(path, "rb") as f:
+                    for _ in f:  # splitlines-agnostic, works with CRLF or LF
+                        self._rows_total += 1
+
+                if not self._range_widgets_added:
+                
+                    self.rows_total_label = QLabel("")
+                    self.range_start = QSpinBox(); self.range_start.setMinimum(1)
+                    self.range_end = QSpinBox(); self.range_end.setMinimum(1)
+
+                    fm = self.range_start.fontMetrics()
+                    min_width = fm.horizontalAdvance('0' * 7)
+                    self.range_start.setMinimumWidth(min_width)
+                    self.range_end.setMinimumWidth(min_width)
+
+                    row = QHBoxLayout()
+                    row.addWidget(QLabel("Range of rows to punch:"))
+                    row.addWidget(self.range_start)
+                    row.addWidget(QLabel("to"))
+                    row.addWidget(self.range_end)
+                    row.addStretch(1)
+
+                    self.range_row_widget = QWidget()
+                    self.range_row_widget.setLayout(row)
+                    self.range_row_widget.setVisible(True)
+                    self.range_row_widget.layout().setContentsMargins(0, 0, 0, 0)
+
+                    # Insert between file_label and punch_button
+                    idx = self.layout.indexOf(self.punch_button)
+                    self.layout.insertWidget(idx, self.rows_total_label)
+                    self.layout.insertWidget(idx + 1, self.range_row_widget)
+                    
+                    # Keep end ≥ start
+                    def _sync_end_min(v):
+                        if self.range_end.value() < v:
+                            self.range_end.setValue(v)
+                            if not self._range_warning_shown:
+                                QMessageBox.warning(self, "", "End of range cannot be smaller than start.")
+                                self._range_warning_shown = True
+                        self.range_end.setMinimum(v)
+
+                
+                    def _sync_start_max(v):
+                        if self.range_start.value() > v:
+                            self.range_start.setValue(v)
+                            if not self._range_warning_shown:
+                                QMessageBox.warning(self, "", "Start of range cannot be larger than end.")
+                                self._range_warning_shown = True
+                        self.range_start.setMaximum(v)
+                    
+                    self.range_start.valueChanged.connect(_sync_end_min)
+                    self.range_end.valueChanged.connect(_sync_start_max)
+
+                    self._range_widgets_added = True
+
+                self.rows_total_label.setText(f"Total rows: {self._rows_total}")
+                self.range_start.setMinimum(1)
+                self.range_start.setMaximum(self._rows_total)
+                self.range_start.setValue(1)
+                self.range_end.setMinimum(1)
+                self.range_end.setMaximum(self._rows_total)
+                self.range_end.setValue(self._rows_total)                
+
+            except Exception as e:
+                QMessageBox.critical(self, "Error counting file rows:", str(e))
+    
+    def punch_file(self):
+        if not self.cd_file:
+            QMessageBox.warning(self, "No File", "Please select a .cd or .txt file to punch .")
+            return
+
         self.stop_button.setEnabled(True)
         file_name = os.path.basename(self.cd_file)
         
         try:
             # Create thread + worker
+            self.worker = PunchWorker(punch_file_test, self.cd_file) # punch_file / punch_file_test 
             self.thread = QThread(self)
-            self.worker = PunchWorker(punch_file, self.cd_file)
             self.worker.moveToThread(self.thread)
 
             # Start + cleanup
@@ -117,26 +213,17 @@ class MainView(QWidget):
             self.worker.finished.connect(self._on_punch_finished)
             self.worker.message.connect(self._on_punch_log)
 
-            # Patch the func args so punch_file_test will get the emitter
+            row_start = self.range_start.value()
+            row_end = self.range_end.value()
+            row_range = (row_start, row_end)
+            punch_all = (row_end - row_start + 1) == self._rows_total
+            self.worker.kwargs = { "log": self.worker.message.emit, "range": row_range, "punch_all": punch_all }
             self.worker.args = (self.cd_file,)
-            self.worker.kwargs = {"log": self.worker.message.emit}
 
             self.thread.start()
 
         except Exception as e:
-            QMessageBox.critical(self, f"Punch {file_name} failed", str(e))
-
-    def punch_file(self):
-        if not self.cd_file:
-            QMessageBox.warning(self, "No File", "Please select a .cd or .txt file to punch .")
-            return
-        try:            
-            # Use QTimer for the delay to let the GUI fully update, then continue with punching
-            QTimer.singleShot(1000, self.continue_punching)  # 1 second delay
-                        
-        except Exception as e:
-            file_name = os.path.basename(self.cd_file)
-            QMessageBox.critical(self, f"Punching {file_name} failed.", str(e))
+            QMessageBox.critical(self, f"Punch {file_name} failed. Error:", str(e))
 
     def add_arduino_message(self, message):
         """Add a message to the Arduino messages display"""

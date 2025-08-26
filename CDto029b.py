@@ -16,7 +16,7 @@ punching_stopped = threading.Event()
     
 # Just for testing
 # ------------------------------------------------------------------------------
-def punch_file_test(file_path, log = None):
+def punch_file_test(file_path, range = None, punch_all = True, log = None):
     file_name = os.path.basename(file_path)
     
     def send_log(msg: str):
@@ -27,10 +27,12 @@ def punch_file_test(file_path, log = None):
 
             except Exception:
                 pass
-
+     
     minutestamp = datetime.now().strftime('%H:%M:%S')
-    send_log(f"{minutestamp} File to punch: {file_name}\n")
-    
+    send_log(f"{minutestamp} File to punch: {file_name}")
+    range_str = f"{range[0]} - {range[1]}"
+    send_log(f"{minutestamp} Rows to punch: {range_str} {'(All rows)' if punch_all else ''}\n")
+   
     punching_stopped.clear()
 
     line_counter = -1
@@ -99,7 +101,7 @@ def punch_file_test(file_path, log = None):
  
 # Send the file to the Arduino line by line
 # ------------------------------------------------------------------------------   
-def punch_file(file_name, log = None):
+def punch_file(file_name, range = None, log = None):
     # USB port D: home  line37   f; CHM
     # Configure the serial port (adjust as needed)
     usb_port = 'COM4'   # at CHM
