@@ -33,7 +33,7 @@ def get_git_count():
 def get_git_date():
     date = None
     try:
-        git_output = subprocess.check_output(["git", "log", "-1", "--format=%cd", "--date=format:%Y-%m-%d %H:%M"], stderr = subprocess.DEVNULL)
+        git_output = subprocess.check_output(["git", "log", "-1", "--format=%cd", "--date=format:%d-%b-%Y %H:%M"], stderr = subprocess.DEVNULL)
         date = git_output.strip().decode()
 
     except subprocess.CalledProcessError:
