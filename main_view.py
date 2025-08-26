@@ -13,6 +13,8 @@ from PyQt5.QtWidgets import QHBoxLayout, QMessageBox, QMainWindow, QTextEdit, QA
 from CDto029b import punch_file, punch_file_test, punching_stopped
 from worker import PunchWorker
 
+kPunchMethod = punch_file_test # punch_file / punch_file_test 
+
 class LogTextEdit(QTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -197,7 +199,7 @@ class MainView(QWidget):
         
         try:
             # Create thread + worker
-            self.worker = PunchWorker(punch_file, self.cd_file) # punch_file / punch_file_test 
+            self.worker = PunchWorker(kPunchMethod, self.cd_file)
             self.thread = QThread(self)
             self.worker.moveToThread(self.thread)
 
@@ -228,15 +230,16 @@ class MainView(QWidget):
     def stop_punching_file(self):
         punching_stopped.set()
  
-    @pyqtSlot(object)
-    def _on_punch_result(self, res):
-        msg = str(res)
-        if msg.lower().startswith("aborted"):
-            print(f"Punching aborted: {msg}")
-            QMessageBox.warning(self, "Punching Aborted", msg)
+    @pyqtSlot(object, bool, tuple)
+    def _on_punch_result(self, response, aborted, row_range):
+        print(f"aborted: {aborted}")
+        print(f"row_range: {row_range}")
+        if aborted:
+            print(f"Punch Interrupted: {response}")
+            QMessageBox.warning(self, "Punch Interrupted", response)
         else:
-            print(f"Punching completed: {msg}")
-            QMessageBox.information(self, "Punching Completed", msg)
+            print(f"Punch Completed: {response}")
+            QMessageBox.information(self, "Punch Completed", response)
 
     @pyqtSlot(object)
     def _on_punch_error(self, err):

@@ -10,8 +10,8 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 class PunchWorker(QObject):
     finished = pyqtSignal()
     error = pyqtSignal(object)
-    result = pyqtSignal(object)
     message = pyqtSignal(object)
+    result = pyqtSignal(object, bool, tuple)
 
     def __init__(self, func, *args, **kwargs):
         super().__init__()
@@ -22,8 +22,8 @@ class PunchWorker(QObject):
     @pyqtSlot()
     def run(self):
         try:
-            res = self.func(*self.args, **self.kwargs)
-            self.result.emit(res)
+            response, aborted, row_range = self.func(*self.args, **self.kwargs)
+            self.result.emit(response, aborted, row_range)
             
         except Exception:
             self.error.emit(traceback.format_exc())

@@ -31,27 +31,33 @@ def punch_file_test(file_path, range = None, punch_all = True, log = None):
 
             except Exception:
                 pass
-     
+        
+    start_row, end_row = range
+    range_str = f"{start_row} to {end_row}"
+
     minutestamp = datetime.now().strftime('%H:%M:%S')
-    range_str = f"{range[0]} to {range[1]}"
     send_log(f"{minutestamp} File to punch: {file_path}")
     send_log(f"{minutestamp} Rows to punch: {range_str} {'(all file)' if punch_all else ''}\n")
    
+    rows_to_punch = end_row - start_row + 1
     line_counter = -1
+    punch_counter = 0
+    punch_aborted = False
+    
     try:
         with open(file_path, 'r') as file:
             line_counter += 1
-            
-            start, end = range
-            
+                        
             for line in file:
                 if punching_stopped.is_set():
-                    return f"Aborted punching file {file_path}"
-                    
+                    end_row = line_counter
+                    punch_aborted = True
+                    break
+                     
                 line_counter += 1
                 
                 if not punch_all:
-                    if not (start <= line_counter <= end):
+                    if not (start_row <= line_counter <= end_row):
                         continue
                     
                 msg = line
@@ -72,6 +78,8 @@ def punch_file_test(file_path, range = None, punch_all = True, log = None):
 
                     # Simulate doing some work...
                     punching_stopped.wait(0.5)
+                    
+                    punch_counter += 1
                  
                     # Check if any data was received
                     if msg:
@@ -104,9 +112,31 @@ def punch_file_test(file_path, range = None, punch_all = True, log = None):
     except OSError as e:
         print("OS error:", e)
         
-    send_log(f"Punch completed.\n")
+    minutestamp = datetime.now().strftime('%H:%M:%S')
     
-    return f"Done punching file {file_path}"
+    range_str = f"{start_row} to {end_row}"
+
+    report = f""
+    
+    if punch_aborted:
+        send_log(f"{minutestamp} Punch interrupted.")
+        report += f"Punch interrupted.\n"
+    else:
+        send_log(f"{minutestamp} Punch completed.")
+        report += f"Punch completed.\n"
+        
+    if punch_counter != rows_to_punch or punch_all == False:
+        send_log(f"{minutestamp} File punched partially.")
+        report += f"File punched partially.\n"
+ 
+    if punch_counter == rows_to_punch and punch_all == True:
+        send_log(f"{minutestamp} File punched completely.")
+        report += f"File punched completely.\n"
+       
+    send_log(f"{minutestamp} Rows punched: {range_str}.\n")
+    report += f"Rows punched: {range_str}."
+       
+    return report, punch_aborted, (start_row, end_row)
  
 # Send the file to the Arduino line by line
 # ------------------------------------------------------------------------------   
@@ -123,11 +153,11 @@ def punch_file(file_path, range = None, punch_all = True, log = None):
 
     msg = ""
     EOJmsg = ""
-    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         
     log_dir = "LOGS"
     os.makedirs(log_dir, exist_ok = True)
 
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     log_filename = os.path.join(log_dir, f"app_log_{timestamp}.log")
     logging.basicConfig(filename = log_filename, level = logging.INFO)
  
@@ -149,11 +179,11 @@ def punch_file(file_path, range = None, punch_all = True, log = None):
             print("No file to punch.")
             sys.exit(0) 
     
-    print(f"Log to file: {os.path.basename(log_filename)}\n")
-    
-    print("File to punch: {file_path}")
-    
-    range_str = f"{range[0]} to {range[1]}"
+    start_row, end_row = range
+    range_str = f"{start_row} to {end_row}"
+
+    print(f"Log to file: {os.path.basename(log_filename)}\n")    
+    print("File to punch: {file_path}")    
     print("Rows to punch: {range_str} {'(all file)' if punch_all else ''}")
  
     minutestamp = datetime.now().strftime('%H:%M:%S')
@@ -162,7 +192,7 @@ def punch_file(file_path, range = None, punch_all = True, log = None):
     send_log(f"{minutestamp} File to punch: {file_path}")   
     send_log(f"{minutestamp} Rows to punch: {range_str} {'(all rows)' if punch_all else ''}\n")   
   
-    punching_interrupted = False
+    punch_aborted = False
  
     try:
         # Open the serial port to the 029 arudino
@@ -194,23 +224,26 @@ def punch_file(file_path, range = None, punch_all = True, log = None):
                     
             else:
                 print("Timeout: No data received")
-             
+                     
+        rows_to_punch = end_row - start_row + 1
         line_counter = -1
+        punch_counter = 0
+
         try:
             with open(file_path, 'r') as file:
                 
                 line_counter += 1
-                start, end = range
                 
                 for line in file:
                     if punching_stopped.is_set():
-                        punching_interrupted = True
+                        end_row = line_counter
+                        punch_aborted = True
                         break
 
                     line_counter += 1
                     
                     if not punch_all:
-                        if not (start <= line_counter <= end):
+                        if not (start_row <= line_counter <= end_row):
                             continue
 
                     msg = "data" + line
@@ -305,27 +338,44 @@ def punch_file(file_path, range = None, punch_all = True, log = None):
          print(f"An unexpected error occurred: {e}")
 
     finally:
-        # Ensure the serial port is closed
-        # print('Finally is executed!')
         minutestamp = datetime.now().strftime('%H:%M:%S')
         send_log(f"{minutestamp} Closing ports and exiting.")
         
+        # Ensure the serial port is closed
         if 'ser' in locals() and ser.is_open:
             ser.close()
             print("Serial port closed.")
+            
+    minutestamp = datetime.now().strftime('%H:%M:%S')
 
-        minutestamp = datetime.now().strftime('%H:%M:%S')
-        send_log(f"{minutestamp} Punch completed.\n")
-  
-        for h in logging.getLogger().handlers[:]:
-                if isinstance(h, logging.FileHandler):
-                    h.close()
-                    logging.getLogger().removeHandler(h)
-    
-    if punching_interrupted:
-        return f"Interrupted punching file:\n{file_path}"
+    range_str = f"{start_row} to {end_row}"
+
+    report = f""
+
+    if punch_aborted:
+        send_log(f"{minutestamp} Punch interrupted.")
+        report += f"Punch interrupted.\n"
     else:
-        return f"Done punching file:\n{file_path}"
+        send_log(f"{minutestamp} Punch completed.")
+        report += f"Punch completed.\n"
+    
+    if punch_counter != rows_to_punch or punch_all == False:
+        send_log(f"{minutestamp} File punched partially.")
+        report += f"File punched partially.\n"
+
+    if punch_counter == rows_to_punch and punch_all == True:
+        send_log(f"{minutestamp} File punched completely.")
+        report += f"File punched completely.\n"
+   
+    send_log(f"{minutestamp} Rows punched: {range_str}.\n")
+    report += f"Rows punched: {range_str}."
+         
+    for h in logging.getLogger().handlers[:]:
+            if isinstance(h, logging.FileHandler):
+                h.close()
+                logging.getLogger().removeHandler(h)
+    
+    return report, punch_aborted, (start_row, end_row)
     
 if __name__ == "__main__":
     try:
