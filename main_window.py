@@ -134,8 +134,9 @@ class MainWindow(QMainWindow):
          
     def clear_logs(self):
         log_files = []
-        if os.path.isdir(kLogDir):
-            log_files = [f for f in os.listdir(kLogDir) if f.endswith(".log")]
+        log_dir = os.path.abspath(kLogDir)
+        if os.path.isdir(log_dir):
+            log_files = [f for f in os.listdir(log_dir) if f.endswith(".log")]
         if len(log_files) == 0:
             QMessageBox.information(self, "Information", "No log file to delete.")
             return
@@ -152,7 +153,7 @@ class MainWindow(QMainWindow):
             return 0
 
         count = 0
-        for name in os.listdir(kLogDir):
+        for name in os.listdir(log_dir):
             if name.endswith(".log"):
                 try:
                     os.remove(os.path.join(log_dir, name))
