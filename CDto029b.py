@@ -17,8 +17,12 @@ punching_stopped = threading.Event()
 # Just for testing
 # ------------------------------------------------------------------------------
 def punch_file_test(file_path, range = None, punch_all = True, log = None):
+
+    punching_stopped.clear()
+
     file_name = os.path.basename(file_path)
     
+    # Emits the log
     def send_log(msg: str):
         print(msg)
         if log:
@@ -29,22 +33,27 @@ def punch_file_test(file_path, range = None, punch_all = True, log = None):
                 pass
      
     minutestamp = datetime.now().strftime('%H:%M:%S')
+    range_str = f"{range[0]} to {range[1]}"
     send_log(f"{minutestamp} File to punch: {file_name}")
-    range_str = f"{range[0]} - {range[1]}"
-    send_log(f"{minutestamp} Rows to punch: {range_str} {'(All rows)' if punch_all else ''}\n")
+    send_log(f"{minutestamp} Rows to punch: {range_str} {'(all file)' if punch_all else ''}\n")
    
-    punching_stopped.clear()
-
     line_counter = -1
     try:
         with open(file_name, 'r') as file:
             line_counter += 1
             
+            start, end = range
+            
             for line in file:
                 if punching_stopped.is_set():
                     return f"Aborted punching file {file_name}"
-
+                    
                 line_counter += 1
+                
+                if not punch_all:
+                    if not (start <= line_counter <= end):
+                        continue
+                    
                 msg = line
                 msg = msg.encode('utf-8')
                 # Send the data + line through the serial port
@@ -101,7 +110,7 @@ def punch_file_test(file_path, range = None, punch_all = True, log = None):
  
 # Send the file to the Arduino line by line
 # ------------------------------------------------------------------------------   
-def punch_file(file_name, range = None, log = None):
+def punch_file(file_path, range = None, punch_all = True, log = None):
     # USB port D: home  line37   f; CHM
     # Configure the serial port (adjust as needed)
     usb_port = 'COM4'   # at CHM
@@ -122,6 +131,7 @@ def punch_file(file_name, range = None, log = None):
     log_filename = os.path.join(log_dir, f"app_log_{timestamp}.log")
     logging.basicConfig(filename = log_filename, level = logging.INFO)
  
+    # Emits the log
     def send_log(msg: str):
         logging.info(msg)
         if log:
@@ -132,20 +142,27 @@ def punch_file(file_name, range = None, log = None):
                 pass
  
     # d: at home  e: at chm
-    if not file_name:
-        file_name = input("Please enter the name of the file you want to punch: ")
-        if not file_name:
+    if not file_path:
+        punch_all = True
+        file_path = input("Please enter the name of the file you want to punch: ")
+        if not file_path:
             print("No file to punch.")
             sys.exit(0) 
-        
-    print("File to punch:", file_name)
-
+    
+    print(f"Log to file: {os.path.basename(log_filename)}\n")
+    
+    print("File to punch: {file_path}")
+    
+    range_str = f"{range[0]} to {range[1]}"
+    print("Rows to punch: {range_str} {'(all file)' if punch_all else ''}")
+ 
     minutestamp = datetime.now().strftime('%H:%M:%S')
-    send_log(f"{minutestamp} Punching file: {file_name} ")
-            
-    minutestamp = datetime.now().strftime('%H:%M:%S')
+    
     send_log(f"{minutestamp} Log to file: {os.path.basename(log_filename)}\n")
     
+    send_log(f"{minutestamp} File to punch: {file_name}")   
+    send_log(f"{minutestamp} Rows to punch: {range_str} {'(all rows)' if punch_all else ''}")   
+  
     punching_interrupted = False
  
     try:
@@ -181,7 +198,7 @@ def punch_file(file_name, range = None, log = None):
              
         line_counter = -1
         try:
-            with open(file_name, 'r') as file:
+            with open(file_path, 'r') as file:
                 line_counter += 1
                 
                 for line in file:
@@ -190,6 +207,11 @@ def punch_file(file_name, range = None, log = None):
                         break
 
                     line_counter += 1
+                    
+                    if not punch_all:
+                        if not (start <= line_counter <= end):
+                            continue
+
                     msg = "data" + line
                     msg = msg.encode('utf-8')
                     # Send the data + line through the serial port
@@ -300,9 +322,9 @@ def punch_file(file_name, range = None, log = None):
                     logging.getLogger().removeHandler(h)
     
     if punching_interrupted:
-        return f"Interrupted punching file:\n{file_name}"
+        return f"Interrupted punching file:\n{file_path}"
     else:
-        return f"Done punching file:\n{file_name}"
+        return f"Done punching file:\n{file_path}"
     
 if __name__ == "__main__":
     try:
