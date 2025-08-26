@@ -74,7 +74,7 @@ class MainView(QWidget):
         self.layout.addWidget(self.punch_button)
         self.layout.addWidget(self.stop_button)
 
-        self.arduino_label = QLabel("Punching operation log:")
+        self.arduino_label = QLabel("Punching operations log:")
         self.arduino_messages = LogTextEdit()
         
         font = QFont()
@@ -224,14 +224,6 @@ class MainView(QWidget):
 
         except Exception as e:
             QMessageBox.critical(self, f"Punch {file_name} failed. Error:", str(e))
-
-    def add_arduino_message(self, message):
-        """Add a message to the Arduino messages display"""
-        self.arduino_messages.append(message)
-        # Auto-scroll to bottom
-        self.arduino_messages.verticalScrollBar().setValue(
-            self.arduino_messages.verticalScrollBar().maximum()
-        )
 
     def stop_punching_file(self):
         punching_stopped.set()

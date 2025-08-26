@@ -145,4 +145,4 @@ class MainWindow(QMainWindow):
                     print(f"Could not remove log file {name}: {e}")
 
         QMessageBox.information(self, "Logs", f"Removed {count} log files.")
-        return           
+        return
