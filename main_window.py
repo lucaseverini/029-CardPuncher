@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
         self.action_delete_log = QAction("Delete Log Text", self)
         self.action_delete_log.triggered.connect(self.delete_log)
         self.utils_menu.addAction(self.action_delete_log)
-                        
+                 
         self.show_punch_files()
         # self.show_about_dialog()
             
