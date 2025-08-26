@@ -197,7 +197,7 @@ class MainView(QWidget):
         
         try:
             # Create thread + worker
-            self.worker = PunchWorker(punch_file_test, self.cd_file) # punch_file / punch_file_test 
+            self.worker = PunchWorker(punch_file, self.cd_file) # punch_file / punch_file_test 
             self.thread = QThread(self)
             self.worker.moveToThread(self.thread)
 

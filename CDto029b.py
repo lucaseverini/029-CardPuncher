@@ -34,19 +34,19 @@ def punch_file_test(file_path, range = None, punch_all = True, log = None):
      
     minutestamp = datetime.now().strftime('%H:%M:%S')
     range_str = f"{range[0]} to {range[1]}"
-    send_log(f"{minutestamp} File to punch: {file_name}")
+    send_log(f"{minutestamp} File to punch: {file_path}")
     send_log(f"{minutestamp} Rows to punch: {range_str} {'(all file)' if punch_all else ''}\n")
    
     line_counter = -1
     try:
-        with open(file_name, 'r') as file:
+        with open(file_path, 'r') as file:
             line_counter += 1
             
             start, end = range
             
             for line in file:
                 if punching_stopped.is_set():
-                    return f"Aborted punching file {file_name}"
+                    return f"Aborted punching file {file_path}"
                     
                 line_counter += 1
                 
@@ -106,7 +106,7 @@ def punch_file_test(file_path, range = None, punch_all = True, log = None):
         
     send_log(f"Punch completed.\n")
     
-    return f"Done punching file {file_name}"
+    return f"Done punching file {file_path}"
  
 # Send the file to the Arduino line by line
 # ------------------------------------------------------------------------------   
@@ -158,10 +158,9 @@ def punch_file(file_path, range = None, punch_all = True, log = None):
  
     minutestamp = datetime.now().strftime('%H:%M:%S')
     
-    send_log(f"{minutestamp} Log to file: {os.path.basename(log_filename)}\n")
-    
-    send_log(f"{minutestamp} File to punch: {file_name}")   
-    send_log(f"{minutestamp} Rows to punch: {range_str} {'(all rows)' if punch_all else ''}")   
+    send_log(f"{minutestamp} Log to file: {os.path.basename(log_filename)}")
+    send_log(f"{minutestamp} File to punch: {file_path}")   
+    send_log(f"{minutestamp} Rows to punch: {range_str} {'(all rows)' if punch_all else ''}\n")   
   
     punching_interrupted = False
  
@@ -199,7 +198,9 @@ def punch_file(file_path, range = None, punch_all = True, log = None):
         line_counter = -1
         try:
             with open(file_path, 'r') as file:
+                
                 line_counter += 1
+                start, end = range
                 
                 for line in file:
                     if punching_stopped.is_set():
