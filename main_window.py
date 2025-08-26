@@ -19,6 +19,8 @@ from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPixmap
 from main_view import MainView
 
+kLogDir = "LOGS"
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -43,6 +45,9 @@ class MainWindow(QMainWindow):
         self.action_clear_logs = QAction("Delete Log Files…", self)
         self.action_clear_logs.triggered.connect(self.clear_logs)
         self.utils_menu.addAction(self.action_clear_logs)
+        self.action_open_logs = QAction("Open Log folder", self)
+        self.action_open_logs.triggered.connect(self.open_log_folder)
+        self.utils_menu.addAction(self.action_open_logs)
         self.action_delete_log = QAction("Delete Log Text", self)
         self.action_delete_log.triggered.connect(self.delete_log)
         self.utils_menu.addAction(self.action_delete_log)
@@ -113,13 +118,24 @@ class MainWindow(QMainWindow):
         
     def delete_log(self):
         self.main_view.arduino_messages.clear()
- 
+
+    def open_log_folder(self):
+        log_dir = os.path.abspath(kLogDir)
+        if not os.path.isdir(log_dir):
+            QMessageBox.information(self, "Logs", f"No {kLogDir} folder found at:\n{log_dir}")
+            return
+
+        if sys.platform.startswith("darwin"):        # macOS
+            subprocess.run(["open", log_dir])
+        elif sys.platform.startswith("win"):         # Windows
+            os.startfile(log_dir)  # built-in
+        else:
+            QMessageBox.warning(self, "Logs", f"Unsupported platform: {sys.platform}")
+         
     def clear_logs(self):
-        log_dir = "LOGS"
-            
         log_files = []
-        if os.path.isdir(log_dir):
-            log_files = [f for f in os.listdir(log_dir) if f.endswith(".log")]
+        if os.path.isdir(kLogDir):
+            log_files = [f for f in os.listdir(kLogDir) if f.endswith(".log")]
         if len(log_files) == 0:
             QMessageBox.information(self, "Information", "No log file to delete.")
             return
@@ -136,7 +152,7 @@ class MainWindow(QMainWindow):
             return 0
 
         count = 0
-        for name in os.listdir(log_dir):
+        for name in os.listdir(kLogDir):
             if name.endswith(".log"):
                 try:
                     os.remove(os.path.join(log_dir, name))
