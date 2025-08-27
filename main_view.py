@@ -32,7 +32,6 @@ class LogTextEdit(QTextEdit):
 class MainView(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("ETL Control Panel")
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
         self.layout.setSpacing(6)
