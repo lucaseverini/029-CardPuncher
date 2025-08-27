@@ -15,7 +15,8 @@ If Not fso.FolderExists(appDir & "\LOGS") Then
 End If
 
 ' Use python.exe (which works), but hide the window (windowstyle 0) via cmd /c
-' cmd = "cmd /c python.exe ""main.py"" > ""LOGS\stdout.log"" 2> ""LOGS\stderr.log"""
+'cmd = "cmd /c python.exe ""main.py"" > ""LOGS\stdout.log"" 2> ""LOGS\stderr.log"""
+'sh.Run cmd, 1, True
 cmd = "cmd /c python.exe ""main.py"""
 sh.Run cmd, 0, False   ' 0 = hidden, False = don’t wait
 

@@ -5,5 +5,7 @@
 *.gif -text
 *.pdf -text
 *.zip -text
+*.txt -text
 # keep CRLF only where required
 *.bat text eol=crlf
+*.vbs text eol=crlf

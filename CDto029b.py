@@ -59,7 +59,7 @@ def punch_file_test(file_path, range = None, punch_all = True, log = None):
                 if not punch_all:
                     if not (start_row <= line_counter <= end_row):
                         continue
-                    
+                                            
                 msg = line
                 msg = msg.encode('utf-8')
                 # Send the data + line through the serial port
@@ -143,7 +143,7 @@ def punch_file_test(file_path, range = None, punch_all = True, log = None):
 def punch_file(file_path, range = None, punch_all = True, log = None):
     # USB port D: home  line37   f; CHM
     # Configure the serial port (adjust as needed)
-    usb_port = 'COM4'   # at CHM
+    usb_port = 'COM4'    # at CHM
     # usb_port = 'COM13' # at home
     # usb_port = "/dev/tty.usbserial-A50285BI" # for macOS
     baud_rate = 9600
@@ -269,14 +269,18 @@ def punch_file(file_path, range = None, punch_all = True, log = None):
                                 print(f"{msg}")
                                 
                                 minutestamp = datetime.now().strftime('%H:%M:%S')
-                                send_log(f"{minutestamp} Received: {msg}")                  
+                                send_log(f"{minutestamp} Received: {msg}")
+                                
                                 if "ERROR" in msg:
                                     minutestamp = datetime.now().strftime('%H:%M:%S')
                                     send_log(f"{minutestamp} Sent: {msg}")  
                                     print("fatal error in keypunch program terminating")                        
                                     sys.exit(0)       
+
+                                punch_counter += 1
+                                
                                 break
-                          
+                                
                             except UnicodeDecodeError:
                                 print("Error decoding data")
                         else:
