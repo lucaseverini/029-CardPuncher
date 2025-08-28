@@ -118,4 +118,12 @@ def main():
     sys.exit(status)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+                
+        sys.exit(0)
+        
+    except KeyboardInterrupt:
+        print("\nProgram Interrupted.")
+        sys.exit(1)
+            
