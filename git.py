@@ -168,4 +168,3 @@ def get_git_version():
     count = get_git_count()
     date = get_git_date()
     return f"1.0 (build {count} - {date})"
-    
