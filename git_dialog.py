@@ -65,7 +65,8 @@ if __name__ == "__main__":
     # print(commits)
     
     if commits:
-        dlg = UpdateDialog("Commits available:", commits)
+        print(len(commits), "commit(s) behind")
+        dlg = UpdateDialog(f"Commits available: {len(commits)}", commits)
         if dlg.exec_() == QDialog.Accepted:
             print("Updating...")
             result = git_check_update(do_update = True)
@@ -75,6 +76,6 @@ if __name__ == "__main__":
         else:
             print("Update cancelled")
     else:
-       print("No commits.") 
+       print("No commits") 
 
     sys.exit(0)

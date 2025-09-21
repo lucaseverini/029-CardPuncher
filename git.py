@@ -79,8 +79,8 @@ def git_check_update(*, repo_dir: Optional[str] = None, do_update: bool = False)
         try:
             raw = _git(
                 "log",
-                "--pretty = format:%H%x1f%an%x1f%ad%x1f%B%x1e",
-                "--date = iso-strict",
+                "--pretty=format:%H%x1f%an%x1f%ad%x1f%B%x1e",
+                "--date=iso-strict",
                 "HEAD..@{u}",
                 cwd = repo_dir
             )
