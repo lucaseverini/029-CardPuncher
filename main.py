@@ -58,6 +58,8 @@ def show_splash_screen_2(app):
 
     splash = QSplashScreen(combo)
     splash.show()
+    splash.raise_()
+    splash.activateWindow()
 
     def show_main_window():
         try:
