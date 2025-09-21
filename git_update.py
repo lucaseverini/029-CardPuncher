@@ -4,6 +4,8 @@
 # git_update.py (9-20-2025)
 # By Luca Severini (lucaseverini@mac.com)
 
+import os
+import re
 import argparse
 import sys
 import subprocess
@@ -77,20 +79,23 @@ def git_check_update(*, repo_dir: Optional[str] = None, do_update: bool = False)
         try:
             raw = _git(
                 "log",
-                "--pretty=format:%H%x1f%an%x1f%ad%x1f%s",
+                "--pretty=format:%H%x1f%an%x1f%ad%x1f%B%x1e",
                 "--date=iso-strict",
                 "HEAD..@{u}",
                 cwd=repo_dir
             )
-            for line in raw.splitlines():
-                parts = line.split("\x1f")
+            for entry in raw.split("\x1e"):
+                if not entry.strip():
+                    continue
+                parts = entry.strip().split("\x1f", 3)
                 if len(parts) == 4:
+                    message = re.sub(r"\n{2,}", "\n", parts[3]).strip()
                     commits.append(
                         {
                             "hash": parts[0],
                             "author": parts[1],
                             "date": parts[2],
-                            "subject": parts[3]
+                            "subject": message
                         }
                     )
         except subprocess.CalledProcessError:
@@ -144,6 +149,10 @@ if __name__ == "__main__":
         print("Checking git repo")
         info = git_check_update(do_update=args.update)
         print(info)
+        
+        if info["updated"]:
+            print("Program updated. Restarting...")
+            os.execv(sys.executable, [sys.executable] + sys.argv)
                 
         sys.exit(0)
         
