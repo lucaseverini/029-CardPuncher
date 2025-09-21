@@ -15,7 +15,7 @@ def _git(*args: str, cwd: Optional[str] = None) -> str:
 # Check for updates in the given Git repo directory and optionally update it.
 # Returns a dict with keys: inside_repo, branch, upstream, ahead, behind, dirty, updated, msg.
 # ------------------------------------------------------------------------------
-def git_check_update(repo_dir: Optional[str] = None, do_update: bool = False) -> Dict[str, Any]:
+def git_check_update(*, repo_dir: Optional[str] = None, do_update: bool = False) -> Dict[str, Any]:
     try:
         inside = _git("rev-parse", "--is-inside-work-tree", cwd=repo_dir) == "true"
     except subprocess.CalledProcessError as e:
@@ -104,7 +104,7 @@ def git_check_update(repo_dir: Optional[str] = None, do_update: bool = False) ->
 if __name__ == "__main__":
     try:
         print("Checking git repo")
-        info = git_check_update()
+        info = git_check_update(do_update=True)
         print(info)
                 
         sys.exit(0)
