@@ -13,7 +13,7 @@ def _git(*args: str, cwd: Optional[str] = None) -> str:
     return subprocess.check_output(["git", *args], cwd=cwd, stderr=subprocess.STDOUT).decode().strip()
 
 # Check for updates in the given Git repo directory and optionally update it.
-# Returns a dict with keys: inside_repo, branch, upstream, ahead, behind, dirty, updated, msg.
+# Returns a dict with keys: inside_repo, branch, upstream, ahead, behind, dirty, updated, msg, commits.
 # ------------------------------------------------------------------------------
 def git_check_update(*, repo_dir: Optional[str] = None, do_update: bool = False) -> Dict[str, Any]:
     try:
@@ -72,6 +72,30 @@ def git_check_update(*, repo_dir: Optional[str] = None, do_update: bool = False)
     except subprocess.CalledProcessError:
         dirty = True
 
+    commits: List[Dict[str, str]] = []
+    if upstream and behind and behind > 0:
+        try:
+            raw = _git(
+                "log",
+                "--pretty=format:%H%x1f%an%x1f%ad%x1f%s",
+                "--date=iso-strict",
+                "HEAD..@{u}",
+                cwd=repo_dir
+            )
+            for line in raw.splitlines():
+                parts = line.split("\x1f")
+                if len(parts) == 4:
+                    commits.append(
+                        {
+                            "hash": parts[0],
+                            "author": parts[1],
+                            "date": parts[2],
+                            "subject": parts[3]
+                        }
+                    )
+        except subprocess.CalledProcessError:
+            commits = []
+
     updated = False
     msg = "OK"
     if do_update and upstream:
@@ -99,12 +123,13 @@ def git_check_update(*, repo_dir: Optional[str] = None, do_update: bool = False)
         "dirty": dirty,
         "updated": updated,
         "msg": msg,
+        "commits": commits,
     }
 
 if __name__ == "__main__":
     try:
         print("Checking git repo")
-        info = git_check_update(do_update=True)
+        info = git_check_update(do_update=False)
         print(info)
                 
         sys.exit(0)
