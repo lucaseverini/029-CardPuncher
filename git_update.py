@@ -4,7 +4,7 @@
 # git_update.py (9-20-2025)
 # By Luca Severini (lucaseverini@mac.com)
 
-import os
+import argparse
 import sys
 import subprocess
 from typing import Dict, Any, Optional
@@ -127,9 +127,22 @@ def git_check_update(*, repo_dir: Optional[str] = None, do_update: bool = False)
     }
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Check and optionally update a git repo.")
+    parser.add_argument(
+        "--update",
+        action="store_true",
+        help="Perform update if behind"
+    )
+    parser.add_argument(
+        "--repo-dir",
+        default=None,
+        help="Path to repo (default: current directory)"
+    )
+    args = parser.parse_args()
+
     try:
         print("Checking git repo")
-        info = git_check_update(do_update=False)
+        info = git_check_update(do_update=args.update)
         print(info)
                 
         sys.exit(0)
