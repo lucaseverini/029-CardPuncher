@@ -41,6 +41,10 @@ def _status_to_term(code: str) -> str:
 # Returns a dict with keys: inside_repo, branch, upstream, ahead, behind, dirty, updated, msg, commits.
 # ------------------------------------------------------------------------------
 def git_check_update(*, repo_dir: Optional[str] = None, do_update: bool = False) -> Dict[str, Any]:
+
+    remote_url = _git("config", "--get", "remote.origin.url", cwd = repo_dir)
+    print(f"Checking git repository {remote_url} ...")
+
     try:
         inside = _git("rev-parse", "--is-inside-work-tree", cwd = repo_dir) == "true"
     except subprocess.CalledProcessError as e:
