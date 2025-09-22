@@ -17,7 +17,7 @@ from main_window import MainWindow
 from git import git_check_update
 from git_dialog import UpdateDialog
 
-kSplashTimeout = 3000 # millisecs
+kSplashTimeout = 2000 # millisecs
 
 # PRINT_ATTRIBUTES
 RED = "\033[31m"
