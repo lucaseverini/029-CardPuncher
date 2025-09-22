@@ -73,12 +73,11 @@ def show_splash_screen(app):
             QMessageBox.critical(None, "Startup Error", err)
             QApplication.quit()
             
-    def check_updates():
-        splash.finish(app.window)
-        
+    def check_updates():        
         result = git_check_update(do_update = False)
         commits = result["commits"]
-    
+        splash.finish(app.window)
+        
         if commits:
             print(len(commits), "commit(s) behind")
             dlg = UpdateDialog(f"Commits available: {len(commits)}", commits)

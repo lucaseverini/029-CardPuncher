@@ -53,9 +53,9 @@ class UpdateDialog(QDialog):
                 files_lines = []
                 for f in commit.get("files", []):
                     if "old_path" in f:
-                        files_lines.append(f'{f.get("status", "")} {f.get("old_path", "")} \u2192 {f.get("path", "")}')
+                        files_lines.append(f'{f.get("status", "")} : {f.get("old_path", "")} \u2192 {f.get("path", "")}')
                     else:
-                        files_lines.append(f'{f.get("status", "")} {f.get("path", "")}')
+                        files_lines.append(f'{f.get("status", "")} : {f.get("path", "")}')
                 self.table.setItem(i, 3, QTableWidgetItem("\n".join(files_lines)))
 
             self.table.resizeColumnsToContents()
