@@ -64,7 +64,7 @@ def show_splash_screen(app):
 
     def show_main_window():
         try:
-            splash.finish(app.window)
+            # splash.finish(app.window)
             app.window = MainWindow()
             app.window.show()
         except Exception as e:
@@ -76,7 +76,7 @@ def show_splash_screen(app):
     def check_updates():        
         result = git_check_update(do_update = False)
         commits = result["commits"]
-        # splash.finish(app.window)
+        splash.finish(app.window)
         
         if commits:
             print(len(commits), "commit(s) behind")
