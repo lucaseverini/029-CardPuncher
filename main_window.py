@@ -20,6 +20,7 @@ from PyQt5.QtGui import QPixmap
 from main_view import MainView
 from git import git_check_update
 from git_dialog import UpdateDialog
+from arduino import upload_to_arduino
 
 kLogDir = "LOGS"
 
@@ -53,6 +54,10 @@ class MainWindow(QMainWindow):
         self.action_delete_log = QAction("Delete Log Text", self)
         self.action_delete_log.triggered.connect(self.delete_log)
         self.utils_menu.addAction(self.action_delete_log)
+        self.utils_menu.addSeparator()
+        self.action_arduino_upload = QAction("Upload to Arduino…", self)
+        self.action_arduino_upload.triggered.connect(upload_to_arduino)
+        self.utils_menu.addAction(self.action_arduino_upload)
         self.utils_menu.addSeparator()
         self.action_update_check = QAction("Update Check…", self)
         self.action_update_check.triggered.connect(self.update_check)
