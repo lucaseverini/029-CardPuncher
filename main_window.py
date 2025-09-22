@@ -10,7 +10,7 @@ import subprocess
 import traceback
 from git import get_git_version
 from datetime import datetime
-from PyQt5.QtWidgets import QMainWindow, QAction, QMenu, QApplication
+from PyQt5.QtWidgets import QMainWindow, QAction, QMenu, QApplication, QDialog
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QLineEdit, QLabel
 from PyQt5.QtWidgets import QComboBox, QMessageBox
@@ -18,6 +18,8 @@ from PyQt5.QtWidgets import QWidget, QInputDialog, QFileDialog
 from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPixmap
 from main_view import MainView
+from git import git_check_update
+from git_dialog import UpdateDialog
 
 kLogDir = "LOGS"
 
@@ -51,6 +53,9 @@ class MainWindow(QMainWindow):
         self.action_delete_log = QAction("Delete Log Text", self)
         self.action_delete_log.triggered.connect(self.delete_log)
         self.utils_menu.addAction(self.action_delete_log)
+        self.action_update_check = QAction("Update Check…", self)
+        self.action_update_check.triggered.connect(self.update_check)
+        self.utils_menu.addAction(self.action_update_check)
                  
         self.show_punch_files()
         # self.show_about_dialog()
@@ -119,6 +124,30 @@ class MainWindow(QMainWindow):
     def delete_log(self):
         self.main_view.arduino_messages.clear()
 
+    def update_check(self):
+        result = git_check_update(do_update = False)
+        commits = result["commits"]
+        commits = []
+        if commits:
+            print(len(commits), "commit(s) behind")
+            dlg = UpdateDialog(f"Commits available: {len(commits)}", commits)
+            if dlg.exec_() == QDialog.Accepted:
+                print("Updating...")
+                result = git_check_update(do_update = True)
+                if result["updated"]:
+                    print("Program updated. Restarting...")
+                    os.execv(sys.executable, [sys.executable] + sys.argv)
+            else:
+                print("Update cancelled")
+        else:
+            print("No commits to apply")
+            QMessageBox.information(
+                self,
+                "Update Check",
+                "Program 029 Puncher is up to date.",
+                QMessageBox.Ok
+            )
+            
     def open_log_folder(self):
         log_dir = os.path.abspath(kLogDir)
         if not os.path.isdir(log_dir):

@@ -10,10 +10,33 @@ import argparse
 import sys
 import subprocess
 from typing import Dict, Any, Optional
+from typing import List
 
 def _git(*args: str, cwd: Optional[str] = None) -> str:
     return subprocess.check_output(["git", *args], cwd = cwd, stderr = subprocess.STDOUT).decode().strip()
 
+def _status_to_term(code: str) -> str:
+    first = code[:1]  # handle cases like R100 or C85
+    if first == "A":
+        return "Added"
+    if first == "M":
+        return "Modified"
+    if first == "D":
+        return "Deleted"
+    if first == "R":
+        return "Renamed"
+    if first == "C":
+        return "Copied"
+    if first == "T":
+        return "Type changed"
+    if first == "U":
+        return "Unmerged"
+    if first == "X":
+        return "Unknown"
+    if first == "B":
+        return "Broken"
+    return code
+    
 # Check for updates in the given Git repo directory and optionally update it.
 # Returns a dict with keys: inside_repo, branch, upstream, ahead, behind, dirty, updated, msg, commits.
 # ------------------------------------------------------------------------------
@@ -90,12 +113,46 @@ def git_check_update(*, repo_dir: Optional[str] = None, do_update: bool = False)
                 parts = entry.strip().split("\x1f", 3)
                 if len(parts) == 4:
                     message = re.sub(r"\n{2,}", "\n", parts[3]).strip()
+                    files_raw = _git(
+                        "show",
+                        "--pretty=format:",
+                        "--name-status",
+                        parts[0],
+                        cwd = repo_dir
+                    )
+                    files: List[Dict[str, str]] = []
+                    for line in files_raw.splitlines():
+                        if not line.strip():
+                            continue
+                        cols = line.split("\t")
+                        if len(cols) == 2:
+                            status, path = cols
+                            status_term = _status_to_term(status)
+                            files.append(
+                                {
+                                    "status": status_term,
+                                    "path": path
+                                }
+                            )
+                        elif len(cols) >= 3:
+                            status = cols[0]
+                            old_path = cols[1]
+                            new_path = cols[2]
+                            status_term = _status_to_term(status)
+                            files.append(
+                                {
+                                    "status": status_term,
+                                    "old_path": old_path,
+                                    "path": new_path
+                                }
+                            )
                     commits.append(
                         {
                             "hash": parts[0],
                             "author": parts[1],
                             "date": parts[2],
-                            "subject": message
+                            "subject": message,
+                            "files": files
                         }
                     )
         except subprocess.CalledProcessError:

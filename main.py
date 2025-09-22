@@ -10,11 +10,12 @@ import signal
 import traceback
 import logging
 from pathlib import Path
-from PyQt5.QtWidgets import QApplication, QSplashScreen, QMessageBox
+from PyQt5.QtWidgets import QApplication, QSplashScreen, QMessageBox, QDialog
 from PyQt5.QtGui import QPixmap, QPainter
 from PyQt5.QtCore import Qt, QTimer
 from main_window import MainWindow
-
+from git import git_check_update
+from git_dialog import UpdateDialog
 
 kSplashTimeout = 3000 # millisecs
 
@@ -36,7 +37,7 @@ def handle_interrupt():
     sys.exit(1)
 
 # ------------------------------------------------------------------------------
-def show_splash_screen_2(app):
+def show_splash_screen(app):
     img1_path = os.path.join(os.path.dirname(__file__), "Images/CHM-logo.png")
     img2_path = os.path.join(os.path.dirname(__file__), "Images/IBM029.png")
 
@@ -63,41 +64,41 @@ def show_splash_screen_2(app):
 
     def show_main_window():
         try:
+            # splash.finish(app.window)
             app.window = MainWindow()
             app.window.show()
-            splash.finish(app.window)
         except Exception as e:
             print(f"{RED}Error showing main window: {e}{RESET}")
             err = traceback.format_exc()
-            from PyQt5.QtWidgets import QMessageBox
             QMessageBox.critical(None, "Startup Error", err)
             QApplication.quit()
+            
+    def check_updates():
+        splash.finish(app.window)
         
-    QTimer.singleShot(kSplashTimeout, show_main_window)
+        result = git_check_update(do_update = False)
+        commits = result["commits"]
+    
+        if commits:
+            print(len(commits), "commit(s) behind")
+            dlg = UpdateDialog(f"Commits available: {len(commits)}", commits)
+            if dlg.exec_() == QDialog.Accepted:
+                print("Updating...")
+                result = git_check_update(do_update = True)
+                if result["updated"]:
+                    print("Program updated. Restarting...")
+                    os.execv(sys.executable, [sys.executable] + sys.argv)
+            else:
+                print("Update cancelled")
+        else:
+            print("No commits to apply")
+            
+        show_main_window()
+        
+    QTimer.singleShot(kSplashTimeout, check_updates)
+    
     app.processEvents()
     
-# ------------------------------------------------------------------------------
-def show_splash_screen(app):
-    image_path = os.path.join(os.path.dirname(__file__), "Images/CHM-logo.png")
-    pixmap = QPixmap(image_path)
-    splash = QSplashScreen(pixmap)
-    splash.show()
-
-    def show_main_window():
-        try:
-            app.window = MainWindow()
-            app.window.show()
-            splash.finish(app.window)
-        except Exception as e:
-            print(f"{RED}Error showing main window: {e}{RESET}")
-            err = traceback.format_exc()
-            from PyQt5.QtWidgets import QMessageBox
-            QMessageBox.critical(None, "Startup Error", err)
-            QApplication.quit()
-        
-    QTimer.singleShot(kSplashTimeout, show_main_window)
-    app.processEvents()
-
 # ------------------------------------------------------------------------------
 def main():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -107,7 +108,7 @@ def main():
     
     signal.signal(signal.SIGINT, lambda sig, frame: handle_interrupt())
 
-    show_splash_screen_2(app)
+    show_splash_screen(app)
    
     # Dummy timer to keep the Qt event loop alive and processing events
     app.window = None
