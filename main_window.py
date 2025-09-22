@@ -53,6 +53,7 @@ class MainWindow(QMainWindow):
         self.action_delete_log = QAction("Delete Log Text", self)
         self.action_delete_log.triggered.connect(self.delete_log)
         self.utils_menu.addAction(self.action_delete_log)
+        self.utils_menu.addSeparator()
         self.action_update_check = QAction("Update Check…", self)
         self.action_update_check.triggered.connect(self.update_check)
         self.utils_menu.addAction(self.action_update_check)
