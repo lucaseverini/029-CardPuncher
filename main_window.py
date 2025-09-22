@@ -128,7 +128,6 @@ class MainWindow(QMainWindow):
     def update_check(self):
         result = git_check_update(do_update = False)
         commits = result["commits"]
-        commits = []
         if commits:
             print(len(commits), "commit(s) behind")
             dlg = UpdateDialog(f"Commits available: {len(commits)}", commits)
