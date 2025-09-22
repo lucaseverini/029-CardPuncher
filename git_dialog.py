@@ -75,8 +75,8 @@ class UpdateDialog(QDialog):
     # Confrimation dialog
     def confirm_update(self):
         box = QMessageBox(self)
-        box.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
-        # box.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint)
+        # box.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
+        box.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint)
         box.setWindowTitle("Confirm to Update")
         box.setText("Are you sure you want to update?")
 
